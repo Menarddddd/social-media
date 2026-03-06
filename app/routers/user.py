@@ -14,6 +14,7 @@ from app.core.dependency import get_current_user
 from app.services.user import (
     delete_profile_service,
     get_user_service,
+    get_users_service,
     sign_in_service,
     sign_up_service,
     update_profile_service,
@@ -41,10 +42,7 @@ async def get_users(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    result = await db.execute(select(User))
-    users = result.scalars().all()
-
-    return users
+    return await get_users_service(db, current_user)
 
 
 @router.get("/profile", response_model=UserResponse, status_code=status.HTTP_200_OK)

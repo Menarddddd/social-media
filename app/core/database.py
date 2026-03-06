@@ -19,4 +19,10 @@ class Base(DeclarativeBase):
 
 async def get_db():
     async with AsyncSessionLocal() as db:
-        yield db
+        try:
+            yield db
+            await db.commit()
+
+        except Exception:
+            await db.rollback()
+            raise

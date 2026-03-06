@@ -20,9 +20,9 @@ from app.repositories.user import (
     add_user_db,
     get_active_user_by_id_db,
     get_active_user_by_username_db,
+    get_all_active_users_db,
 )
-from app.schemas.user import DeleteProfile, Token, UserCreate, UserResponse, UserUpdate
-from app.core.dependency import get_current_user
+from app.schemas.user import DeleteProfile, UserCreate, UserUpdate
 
 
 async def sign_in_service(
@@ -46,17 +46,16 @@ async def sign_in_service(
 
 async def sign_up_service(form_data: UserCreate, db: AsyncSession):
     new_user = User(
-        first_name=form_data.first_name,
-        last_name=form_data.last_name,
+        first_name=form_data.first_name.strip().title(),
+        last_name=form_data.last_name.strip().title(),
         username=form_data.username,
-        email=form_data.email,
+        email=form_data.email.strip(),
         password=hash_password(form_data.password),
         is_deleted=False,
     )
 
     try:
-        async with db.begin():
-            await add_user_db(new_user, db)
+        await add_user_db(new_user, db)
 
     except IntegrityError as e:
         raise_duplicate_from_integrity_error(
@@ -81,11 +80,11 @@ async def update_profile_service(
     parsed_user = {k: v for k, v in parsed_user.items() if k in allowed}
 
     try:
-        async with db.begin():
-            for key, value in parsed_user.items():
-                setattr(current_user, key, value)
 
-            await db.flush()
+        for key, value in parsed_user.items():
+            setattr(current_user, key, value)
+
+        await db.flush()
 
     except IntegrityError as e:
         raise_duplicate_from_integrity_error(
@@ -110,6 +109,10 @@ async def get_user_service(
     return await get_active_user_by_id_db(user_id, db)
 
 
+async def get_users_service(db: AsyncSession, current_user: User):
+    return await get_all_active_users_db(db)
+
+
 async def delete_profile_service(
     form_data: DeleteProfile,
     db: AsyncSession,
@@ -118,15 +121,14 @@ async def delete_profile_service(
     if not verify_password(form_data.password, current_user.password):
         raise InvalidCredentialsError()
 
-    async with db.begin():
-        current_user.is_deleted = True  # soft delete user
+    current_user.is_deleted = True  # soft delete user
 
-        db.add(
-            UserDeletion(
-                user_id=current_user.id,
-                deleted_at=datetime.now(timezone.utc),
-                reason=form_data.reason,
-            )
+    db.add(
+        UserDeletion(
+            user_id=current_user.id,
+            deleted_at=datetime.now(timezone.utc),
+            reason=form_data.reason,
         )
+    )
 
-        await db.flush()
+    await db.flush()
