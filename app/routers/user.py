@@ -63,10 +63,8 @@ async def get_users(
 async def my_profile(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-    page: Annotated[int, Query(ge=1)] = 1,
-    limit: Annotated[int, Query(ge=1, le=50)] = 20,
 ):
-    return await my_profile_service(current_user.id, db, page, limit)
+    return await my_profile_service(current_user.id, db)
 
 
 @router.get("/activities", response_model=UserActivity, status_code=status.HTTP_200_OK)
@@ -112,4 +110,4 @@ async def delete_profile(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    return await delete_profile_service(form_data, db, current_user)
+    await delete_profile_service(form_data, db, current_user)
