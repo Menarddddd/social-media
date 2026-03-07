@@ -1,17 +1,17 @@
 import jwt
 from uuid import UUID
-from jwt import InvalidTokenError, ExpiredSignatureError, PyJWTError
+from jwt import ExpiredSignatureError, PyJWTError
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.settings import settings
 from app.exceptions.exception import FieldNotFoundException
 from app.models.user import User
+from app.repositories.comment import get_comment_by_id_db
 from app.repositories.post import get_post_by_id_db
 from app.repositories.user import get_active_user_by_id_db
 
@@ -78,3 +78,21 @@ async def post_owner(
         )
 
     return post
+
+
+async def comment_owner(
+    comment_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    comment = await get_comment_by_id_db(comment_id, db)
+    if not comment:
+        raise FieldNotFoundException("comment", str(comment_id))
+
+    if comment.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have the permission to modify this commen",
+        )
+
+    return comment

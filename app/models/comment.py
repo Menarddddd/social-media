@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime, timezone
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from uuid import UUID
-from sqlalchemy import DateTime, String, UUID as PG_UUID, ForeignKey, Text
+from sqlalchemy import DateTime, UUID as PG_UUID, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base

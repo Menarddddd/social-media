@@ -18,6 +18,7 @@ from app.exceptions.exception import (
     raise_duplicate_from_integrity_error,
 )
 from app.models.user import User, UserDeletion
+from app.repositories.comment import limit_comment_db
 from app.repositories.post import limit_post_db
 from app.repositories.user import (
     add_user_db,
@@ -86,10 +87,11 @@ async def get_activate_user_with_activities_service(
     offset = (page - 1) * limit
 
     posts = await limit_post_db(current_user.id, db, offset, limit)
+    comments = await limit_comment_db(current_user.id, db, offset, limit)
 
     return {
         "posts": posts,
-        "comments": [],
+        "comments": comments,
     }
 
 

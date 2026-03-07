@@ -1,5 +1,4 @@
 from uuid import UUID
-from typing import List
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
 
@@ -15,12 +14,12 @@ class DeleteProfile(BaseModel):
 
 
 class UserBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     first_name: str = Field(min_length=2, max_length=100)
     last_name: str = Field(min_length=2, max_length=100)
     username: str = Field(min_length=6, max_length=200)
     email: EmailStr
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class UserCreate(UserBase):
@@ -54,11 +53,11 @@ class CommentPublic(BaseModel):
 
 
 class UserWithPostResponse(UserResponse):
-    posts: List[PostPublic]
+    posts: list[PostPublic]
 
 
 class UserActivity(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    posts: List[PostPublic]
-    comments: List[CommentPublic]
+    posts: list[PostPublic]
+    comments: list[CommentPublic]

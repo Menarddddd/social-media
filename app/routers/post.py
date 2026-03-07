@@ -9,12 +9,14 @@ from app.core.database import get_db
 from app.core.dependency import get_current_user, post_owner
 from app.models.post import Post
 from app.models.user import User
-from app.repositories.post import (
-    delete_post_db,
-    get_all_user_post_db,
-    get_post_by_id_db,
+from app.repositories.post import delete_post_db
+from app.schemas.post import (
+    PostCreate,
+    PostFeedResponse,
+    PostResponse,
+    PostUpdate,
+    PostWithCommentAuthorResponse,
 )
-from app.schemas.post import PostCreate, PostFeedResponse, PostResponse, PostUpdate
 from app.services.post import (
     create_post_service,
     feed_post_service,
@@ -48,7 +50,11 @@ async def feed(
     return await feed_post_service(db, page, limit)
 
 
-@router.get("", response_model=List[PostResponse], status_code=status.HTTP_200_OK)
+@router.get(
+    "",
+    response_model=List[PostWithCommentAuthorResponse],
+    status_code=status.HTTP_200_OK,
+)
 async def my_posts(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
