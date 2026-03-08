@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.exceptions.exception import (
@@ -54,3 +55,8 @@ def register_exception_handlers(app: FastAPI):
         InvalidCredentialsError, invalid_credentials_error_handler
     )
     app.add_exception_handler(StarletteHTTPException, starlette_http_exception_handler)
+
+
+def mount_folders(app: FastAPI):
+    app.mount("/static", StaticFiles(directory="app/static"), name="static")
+    app.mount("/media", StaticFiles(directory="app/media"), name="media")
