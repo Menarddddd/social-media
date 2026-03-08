@@ -48,7 +48,10 @@ class User(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     posts: Mapped[List["Post"]] = relationship(
-        "Post", back_populates="author", cascade="all, delete-orphan"
+        "Post",
+        back_populates="author",
+        cascade="all, delete-orphan",
+        order_by="desc(Post.date_created)",
     )
     comments: Mapped[List["Comment"]] = relationship(
         "Comment", back_populates="author", cascade="all, delete-orphan"

@@ -11,7 +11,7 @@ from app.repositories.comment import get_comment_by_id_db, get_user_comments_db
 from app.schemas.comment import CommentCreate, CommentUpdate
 
 
-async def create_comment_service(
+async def create_comment_api_service(
     form_data: CommentCreate, post_id: UUID, db: AsyncSession, user: User
 ) -> Comment:
     new_comment = Comment(message=form_data.message, post_id=post_id, author=user)
@@ -19,6 +19,19 @@ async def create_comment_service(
     db.add(new_comment)
     await db.flush()
 
+    return new_comment
+
+
+async def create_comment_service(
+    *,
+    message: str,
+    post_id: UUID,
+    db: AsyncSession,
+    user: User,
+) -> Comment:
+    new_comment = Comment(message=message, post_id=post_id, author=user)
+    db.add(new_comment)
+    await db.flush()
     return new_comment
 
 

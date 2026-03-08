@@ -18,6 +18,7 @@ from app.schemas.comment import (
     CommentWithPostAuthorResponse,
 )
 from app.services.comment import (
+    create_comment_api_service,
     create_comment_service,
     get_comment_service,
     my_comments_service,
@@ -35,7 +36,7 @@ async def create_comment(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    return await create_comment_service(form_data, post_id, db, current_user)
+    return await create_comment_api_service(form_data, post_id, db, current_user)
 
 
 @router.get(

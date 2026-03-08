@@ -17,7 +17,9 @@ from app.exceptions.exception import (
     InvalidCredentialsError,
     raise_duplicate_from_integrity_error,
 )
+from app.models.post import Post
 from app.models.user import User, UserDeletion
+from app.models.comment import Comment
 from app.repositories.comment import limit_comment_db
 from app.repositories.post import limit_post_db
 from app.repositories.user import (
@@ -33,12 +35,13 @@ UPDATE_USER_ALLOWED = {"first_name", "last_name", "username", "email"}
 
 
 async def sign_in_service(
-    form_data: OAuth2PasswordRequestForm,
+    username: str,
+    password: str,
     db: AsyncSession,
 ):
-    user = await get_active_user_by_username_db(form_data.username, db)
+    user = await get_active_user_by_username_db(username, db)
 
-    if not user or not verify_password(form_data.password, user.password):
+    if not user or not verify_password(password, user.password):
         raise InvalidCredentialsError()
 
     access_token = create_access_token({"sub": str(user.id)})
@@ -76,8 +79,15 @@ async def sign_up_service(form_data: UserCreate, db: AsyncSession):
 
 
 async def my_profile_service(user_id: UUID, db: AsyncSession):
-
-    return await get_active_user_by_id_db(user_id, db, selectinload(User.posts))
+    return await get_active_user_by_id_db(
+        user_id,
+        db,
+        selectinload(User.posts).selectinload(Post.author),
+        selectinload(User.posts)
+        .selectinload(Post.comments)
+        .selectinload(Comment.author),
+        selectinload(User.comments).selectinload(Comment.post),
+    )
 
 
 async def get_activate_user_with_activities_service(

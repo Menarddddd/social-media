@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  {# --- CREATE POST (TOP OF FEED) --- #}
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Create Post</h5>
+
+      <form method="post" action="/posts">
+        <input type="hidden" name="next" value="/feed">
+
+        <div class="mb-2">
+          <input
+            class="form-control"
+            name="title"
+            placeholder="Title"
+            required
+          >
+        </div>
+
+        <div class="mb-3">
+          <textarea
+            class="form-control"
+            name="content"
+            rows="3"
+            placeholder="What's on your mind?"
+            required
+          ></textarea>
+        </div>
+
+        <button class="btn btn-dark w-100" type="submit">Post</button>
+      </form>
+    </div>
+  </div>
+
+  <h2 class="mb-4">Feed</h2>
+
+  {% if not feed_posts %}
+    <div class="text-muted">No posts yet.</div>
+  {% endif %}
+
+  {% for post in feed_posts %}
+    <div class="card mb-4 shadow-sm" id="post-{{ post.id }}">
+      <div class="card-body">
+
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h5 class="card-title mb-2">{{ post.title }}</h5>
+
+            <div class="d-flex align-items-center gap-2">
+              {# CLICKABLE post author picture #}
+              <a href="/users/{{ post.author.id }}">
+                <img
+                  src="{% if post.author.image_file %}{{ url_for('media', path=post.author.image_file) }}{% else %}{{ url_for('media', path='default_profile.webp') }}{% endif %}"
+                  alt="Author"
+                  class="rounded-circle border"
+                  style="width: 36px; height: 36px; object-fit: cover;"
+                >
+              </a>
+
+              {# CLICKABLE post author name #}
+              <a class="text-decoration-none text-muted small" href="/users/{{ post.author.id }}">
+                {{ post.author.first_name }} {{ post.author.last_name }}
+              </a>
+            </div>
+          </div>
+
+          {% if post.date_created %}
+            <div class="text-muted small">{{ post.date_created | dt }}</div>
+          {% endif %}
+        </div>
+
+        <p class="card-text mt-3">{{ post.content }}</p>
+
+        {# --- COMMENT BUTTON + FORM --- #}
+        <div class="d-flex gap-2 mt-3">
+          <button
+            class="btn btn-sm btn-outline-dark"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#commentForm{{ post.id }}"
+            aria-expanded="false"
+            aria-controls="commentForm{{ post.id }}"
+          >
+            Comment
+          </button>
+        </div>
+
+        <div class="collapse mt-3" id="commentForm{{ post.id }}">
+          <form method="post" action="/posts/{{ post.id }}/comments">
+            <input type="hidden" name="next" value="/feed#post-{{ post.id }}">
+
+            <div class="mb-2">
+              <textarea
+                class="form-control"
+                name="message"
+                rows="2"
+                placeholder="Write a comment..."
+                required
+              ></textarea>
+            </div>
+
+            <button class="btn btn-dark btn-sm" type="submit">Post comment</button>
+          </form>
+        </div>
+
+        <hr>
+
+        <h6 class="mb-3">Comments ({{ post.comments|length }})</h6>
+
+        {% if post.comments %}
+          <ul class="list-group list-group-flush">
+            {% for c in post.comments %}
+              <li class="list-group-item">
+
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="d-flex align-items-center gap-2">
+                    {# CLICKABLE comment author picture #}
+                    <a href="/users/{{ c.author.id }}">
+                      <img
+                        src="{% if c.author.image_file %}{{ url_for('media', path=c.author.image_file) }}{% else %}{{ url_for('media', path='default_profile.webp') }}{% endif %}"
+                        alt="Comment author"
+                        class="rounded-circle border"
+                        style="width: 32px; height: 32px; object-fit: cover;"
+                      >
+                    </a>
+
+                    {# CLICKABLE comment author name #}
+                    <a class="text-decoration-none text-dark fw-semibold" href="/users/{{ c.author.id }}">
+                      {{ c.author.first_name }} {{ c.author.last_name }}
+                    </a>
+                  </div>
+
+                  {% if c.date_created %}
+                    <div class="text-muted small">{{ c.date_created | dt }}</div>
+                  {% endif %}
+                </div>
+
+                <div class="mt-2">{{ c.message }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="text-muted">No comments yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+
+  {% if pages > 1 %}
+    <nav class="mt-4">
+      <ul class="pagination justify-content-center">
+
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+          <a class="page-link" href="/feed?page={{ page - 1 }}&limit={{ limit }}">Previous</a>
+        </li>
+
+        {% for p in range(1, pages + 1) %}
+          <li class="page-item {% if p == page %}active{% endif %}">
+            <a class="page-link" href="/feed?page={{ p }}&limit={{ limit }}">{{ p }}</a>
+          </li>
+        {% endfor %}
+
+        <li class="page-item {% if page >= pages %}disabled{% endif %}">
+          <a class="page-link" href="/feed?page={{ page + 1 }}&limit={{ limit }}">Next</a>
+        </li>
+
+      </ul>
+    </nav>
+  {% endif %}
+
+{% endblock %}

@@ -39,7 +39,7 @@ async def sign_in(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    return await sign_in_service(form_data, db)
+    return await sign_in_service(form_data.username, form_data.password, db)
 
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)

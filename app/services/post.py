@@ -1,3 +1,4 @@
+import math
 from typing import List
 from uuid import UUID
 
@@ -11,13 +12,25 @@ from app.models.user import User
 from app.repositories.post import (
     add_post_db,
     feed_post_db,
+    feed_post_db_web,
     get_all_user_post_db,
     get_post_by_id_db,
 )
+from app.repositories.user import get_active_user_by_id_db
 from app.schemas.post import PostCreate, PostUpdate
 
 
 UPDATE_POST_ALLOWED = {"title", "content"}
+
+
+async def my_profile_service(user_id: UUID, db: AsyncSession) -> User | None:
+    return await get_active_user_by_id_db(
+        user_id,
+        db,
+        selectinload(User.posts)
+        .selectinload(Post.comments)
+        .selectinload(Comment.author),
+    )
 
 
 async def feed_post_service(db: AsyncSession, page: int, limit: int) -> List[Post]:
@@ -26,6 +39,25 @@ async def feed_post_service(db: AsyncSession, page: int, limit: int) -> List[Pos
     return await feed_post_db(
         db, offset, limit, selectinload(Post.author), selectinload(Post.comments)
     )
+
+
+async def feed_post_service_web(
+    db: AsyncSession,
+    page: int,
+    limit: int,
+) -> tuple[list[Post], int]:
+    offset = (page - 1) * limit
+
+    posts, total = await feed_post_db_web(
+        db,
+        offset,
+        limit,
+        selectinload(Post.author),
+        selectinload(Post.comments).selectinload(Comment.author),
+    )
+
+    pages = math.ceil(total / limit) if total else 1
+    return posts, pages
 
 
 async def my_posts_service(db: AsyncSession, current_user: User, page: int, limit: int):

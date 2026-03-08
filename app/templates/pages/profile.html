@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  {# --- PROFILE HEADER + CLICKABLE PHOTO UPLOAD --- #}
+  <div class="d-flex align-items-center gap-4 mb-4">
+
+    <form method="post" action="/profile/photo" enctype="multipart/form-data" class="m-0">
+      <label for="photo-input" style="cursor: pointer;">
+        <img
+          src="{% if user.image_file %}{{ url_for('media', path=user.image_file) }}{% else %}{{ url_for('media', path='default_profile.webp') }}{% endif %}"
+          alt="Profile picture"
+          class="rounded-circle border shadow-sm"
+          style="width: 140px; height: 140px; object-fit: cover;"
+        >
+      </label>
+
+      <input
+        id="photo-input"
+        name="photo"
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        class="d-none"
+        required
+      >
+
+      <div class="mt-2">
+        <button class="btn btn-sm btn-outline-dark w-100" type="submit">Update photo</button>
+      </div>
+    </form>
+
+    <div>
+      <h2 class="mb-0">{{ user.first_name }} {{ user.last_name }}</h2>
+    </div>
+
+  </div>
+
+  {# --- EDIT PROFILE FORM --- #}
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Edit Profile</h5>
+
+      <form method="post" action="/profile">
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <label class="form-label">First name</label>
+            <input class="form-control" name="first_name" value="{{ user.first_name }}" required>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Last name</label>
+            <input class="form-control" name="last_name" value="{{ user.last_name }}" required>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Username</label>
+            <input class="form-control" name="username" value="{{ user.username }}" required>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Email</label>
+            <input class="form-control" type="email" name="email" value="{{ user.email }}" required>
+          </div>
+
+          <div class="col-12">
+            <button class="btn btn-dark w-100" type="submit">Update</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# --- POSTS + COMMENTS --- #}
+  <h4 class="mb-3">Posts</h4>
+
+  {% if not user.posts %}
+    <div class="text-muted">No posts yet.</div>
+  {% endif %}
+
+  {% for post in user.posts %}
+    <div class="card mb-4 shadow-sm" id="post-{{ post.id }}">
+      <div class="card-body">
+
+        {# Title / Date / Actions #}
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h5 class="card-title mb-1">{{ post.title }}</h5>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            {% if post.date_created %}
+              <div class="text-muted small">{{ post.date_created | dt }}</div>
+            {% endif %}
+
+            {# Edit button #}
+            <button
+              class="btn btn-sm btn-outline-dark"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#editPostForm{{ post.id }}"
+              aria-expanded="false"
+              aria-controls="editPostForm{{ post.id }}"
+            >
+              Edit
+            </button>
+
+            {# Delete button #}
+            <form method="post" action="/posts/{{ post.id }}/delete" class="m-0">
+              <input type="hidden" name="next" value="/profile">
+              <button class="btn btn-sm btn-dark" type="submit">Delete</button>
+            </form>
+          </div>
+        </div>
+
+        {# Inline edit form (collapsible) #}
+        <div class="collapse mt-3" id="editPostForm{{ post.id }}">
+          <form method="post" action="/posts/{{ post.id }}/edit">
+            <input type="hidden" name="next" value="/profile#post-{{ post.id }}">
+
+            <div class="mb-2">
+              <label class="form-label">Title</label>
+              <input class="form-control" name="title" value="{{ post.title }}" required>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label">Content</label>
+              <textarea class="form-control" name="content" rows="3" required>{{ post.content }}</textarea>
+            </div>
+
+            <button class="btn btn-sm btn-dark" type="submit">Save</button>
+          </form>
+        </div>
+
+        <p class="card-text mt-3">{{ post.content }}</p>
+
+        {# Comment button + form #}
+        <div class="d-flex gap-2 mt-3">
+          <button
+            class="btn btn-sm btn-outline-dark"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#commentForm{{ post.id }}"
+            aria-expanded="false"
+            aria-controls="commentForm{{ post.id }}"
+          >
+            Comment
+          </button>
+        </div>
+
+        <div class="collapse mt-3" id="commentForm{{ post.id }}">
+          <form method="post" action="/posts/{{ post.id }}/comments">
+            <input type="hidden" name="next" value="/profile#post-{{ post.id }}">
+
+            <div class="mb-2">
+              <textarea
+                class="form-control"
+                name="message"
+                rows="2"
+                placeholder="Write a comment..."
+                required
+              ></textarea>
+            </div>
+
+            <button class="btn btn-dark btn-sm" type="submit">Post comment</button>
+          </form>
+        </div>
+
+        <hr>
+
+        <h6 class="mb-3">Comments ({{ post.comments|length }})</h6>
+
+        {% if post.comments %}
+          <ul class="list-group list-group-flush">
+            {% for c in post.comments %}
+              <li class="list-group-item">
+                <div class="d-flex justify-content-between">
+                  <div class="fw-semibold">
+                    {{ c.author.first_name }} {{ c.author.last_name }}
+                  </div>
+
+                  {% if c.date_created %}
+                    <div class="text-muted small">{{ c.date_created | dt }}</div>
+                  {% endif %}
+                </div>
+
+                <div class="mt-1">{{ c.message }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="text-muted">No comments yet.</div>
+        {% endif %}
+
+      </div>
+    </div>
+  {% endfor %}
+
+{% endblock %}

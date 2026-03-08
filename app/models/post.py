@@ -28,4 +28,6 @@ class Post(Base):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     author: Mapped["User"] = relationship("User", back_populates="posts")
-    comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="post")
+    comments: Mapped[List["Comment"]] = relationship(
+        "Comment", back_populates="post", cascade="all, delete-orphan"
+    )

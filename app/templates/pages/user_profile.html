@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <img
+      src="{% if profile_user.image_file %}{{ url_for('media', path=profile_user.image_file) }}{% else %}{{ url_for('media', path='default_profile.webp') }}{% endif %}"
+      alt="Profile picture"
+      class="rounded-circle border shadow-sm"
+      style="width: 110px; height: 110px; object-fit: cover;"
+    >
+
+    <div>
+      <h2 class="mb-0">{{ profile_user.first_name }} {{ profile_user.last_name }}</h2>
+    </div>
+  </div>
+
+  <h4 class="mb-3">Posts</h4>
+
+  {% if not profile_user.posts %}
+    <div class="text-muted">No posts yet.</div>
+  {% endif %}
+
+  {% for post in profile_user.posts %}
+    <div class="card mb-4 shadow-sm" id="post-{{ post.id }}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h5 class="card-title mb-1">{{ post.title }}</h5>
+          </div>
+
+          {% if post.date_created %}
+            <div class="text-muted small">{{ post.date_created | dt }}</div>
+          {% endif %}
+        </div>
+
+        <p class="card-text mt-3">{{ post.content }}</p>
+
+        <hr>
+
+        <h6 class="mb-3">Comments ({{ post.comments|length }})</h6>
+
+        {% if post.comments %}
+          <ul class="list-group list-group-flush">
+            {% for c in post.comments %}
+              <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="d-flex align-items-center gap-2">
+                    <img
+                      src="{% if c.author.image_file %}{{ url_for('media', path=c.author.image_file) }}{% else %}{{ url_for('media', path='default_profile.webp') }}{% endif %}"
+                      alt="Comment author"
+                      class="rounded-circle border"
+                      style="width: 32px; height: 32px; object-fit: cover;"
+                    >
+                    <div class="fw-semibold">
+                      <a class="text-decoration-none text-dark" href="/users/{{ c.author.id }}">
+                        {{ c.author.first_name }} {{ c.author.last_name }}
+                      </a>
+                    </div>
+                  </div>
+
+                  {% if c.date_created %}
+                    <div class="text-muted small">{{ c.date_created | dt }}</div>
+                  {% endif %}
+                </div>
+
+                <div class="mt-2">{{ c.message }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="text-muted">No comments yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}

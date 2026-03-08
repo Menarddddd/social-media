@@ -1,12 +1,10 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
 
-from app import models
+from app import models  # this loads the models
 from app.core.database import engine, Base
-from app.routers.user import router as user_router
-from app.routers.post import router as post_router
-from app.routers.comment import router as comment_router
-from app.exceptions.handler import register_exception_handlers
+from app.config.load_main import register_routers, register_exception_handlers
 
 
 @asynccontextmanager
@@ -21,8 +19,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(user_router, prefix="/api/users", tags=["users"])
-app.include_router(post_router, prefix="/api/posts", tags=["posts"])
-app.include_router(comment_router, prefix="/api/comments", tags=["comments"])
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/media", StaticFiles(directory="app/media"), name="media")
 
+register_routers(app)
 register_exception_handlers(app)

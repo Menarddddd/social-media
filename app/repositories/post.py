@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.post import Post
@@ -24,6 +24,38 @@ async def feed_post_db(
 
     result = await db.execute(stmt)
     return list(result.scalars().all())
+
+
+async def feed_post_db_web(
+    db: AsyncSession,
+    offset: int,
+    limit: int,
+    *options,
+) -> tuple[list[Post], int]:
+    total_stmt = (
+        select(func.count())
+        .select_from(Post)
+        .join(User, Post.user_id == User.id)
+        .where(User.is_deleted.is_(False))
+    )
+    total = int((await db.scalar(total_stmt)) or 0)
+
+    stmt = (
+        select(Post)
+        .join(User, Post.user_id == User.id)
+        .where(User.is_deleted.is_(False))
+        .order_by(Post.date_created.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+
+    if options:
+        stmt = stmt.options(*options)
+
+    result = await db.execute(stmt)
+    posts = list(result.scalars().all())
+
+    return posts, total
 
 
 async def get_post_by_id_db(post_id: UUID, db: AsyncSession, *options) -> Post | None:

@@ -1,6 +1,7 @@
-from fastapi import Request, FastAPI, status
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
+from app.core import templates
 from app.exceptions.exception import (
     DuplicateEntryException,
     FieldNotFoundException,
@@ -40,14 +41,4 @@ async def duplicate_entry_exception_handler(
     return JSONResponse(
         status_code=409,
         content={exc.field: exc.value, "message": str(exc)},
-    )
-
-
-def register_exception_handlers(app: FastAPI):
-    app.add_exception_handler(FieldNotFoundException, field_not_found_exception_handler)
-    app.add_exception_handler(
-        DuplicateEntryException, duplicate_entry_exception_handler
-    )
-    app.add_exception_handler(
-        InvalidCredentialsError, invalid_credentials_error_handler
     )
